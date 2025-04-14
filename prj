@@ -391,11 +391,37 @@ void playSudoku(int boards[NUM_BOARDS][SIZE][SIZE], int solutions[NUM_BOARDS][SI
         else if (choice == 2) {
             if (isBoardComplete(selectedBoard)) {
                 printf("\nFelicitări! Soluția ta este corectă!\n");
-            } else {
-                printf("\nTabla nu este completă sau are erori.\n");
-            }
-            waitForEnter();
-        } 
+
+                printf("\nBine ai venit la Sudoku Shop!\n");
+                printf("\nCe ai dori să cumperi?\n");
+                printf("1. Clues Type 1\n");
+                printf("2. Clues Type 2\n");
+                printf("3. Clues Type 3\n");
+ 
+                int shopChoice;
+                scanf("%d", &shopChoice);
+
+                switch (shopChoice) {
+                    case 1:
+                        printf("Ai ales Clues Type 1.\n");
+                        break;
+                    case 2:
+                        printf("Ai ales Clues Type 2.\n");
+                        break;
+                    case 3:
+                        printf("Ai ales Clues Type 3.\n");
+                        break;
+                    default:
+                        printf("Opțiune invalidă.\n");
+                        break;
+                }
+            } 
+        
+        else {
+        printf("\nTabla nu este completă sau are erori.\n");
+    }
+    waitForEnter();
+}
         
         else if (choice == 3) {
             copyBoard(originalBoard, selectedBoard);
