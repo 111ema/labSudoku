@@ -1,0 +1,686 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+#define SIZE 9
+#define SUBGRID 3
+#define NUM_HINTS 40  
+#define NUM_BOARDS 10 
+
+void initializeBoard(int board[SIZE][SIZE]) {
+    int i, j;
+    for (i = 0; i < SIZE; i++) {
+        for (j = 0; j < SIZE; j++) {
+            board[i][j] = 0;
+        }
+    }
+}
+
+
+void printBoard(int board[SIZE][SIZE]) {
+    int i, j;
+    printf("  -----------------------\n");
+    
+    for (i = 0; i < SIZE; i++) {
+        if (i % SUBGRID == 0 && i != 0) {
+            printf("  -----------------------\n");
+        }
+        printf(" | ");
+        for (j = 0; j < SIZE; j++) {
+            if (j % SUBGRID == 0 && j != 0) {
+                printf("| ");
+            }
+            if (board[i][j] == 0) {
+                printf(". ");
+            } else {
+                printf("%d ", board[i][j]);
+            }
+        }
+        printf("|\n");
+    }
+    printf("  -----------------------\n");
+}
+
+
+int isValidMove(int board[SIZE][SIZE], int row, int col, int num) {
+    int i, j;
+    
+ 
+    for (j = 0; j < SIZE; j++) {
+        if (j != col && board[row][j] == num) {
+            return 0; 
+        }
+    }
+    
+    for (i = 0; i < SIZE; i++) {
+        if (i != row && board[i][col] == num) {
+            return 0; 
+        }
+    }
+    
+   
+    int startRow = (row / SUBGRID) * SUBGRID;
+    int startCol = (col / SUBGRID) * SUBGRID;
+    for (i = 0; i < SUBGRID; i++) {
+        for (j = 0; j < SUBGRID; j++) {
+            int r = startRow + i;
+            int c = startCol + j;
+            if ((r != row || c != col) && board[r][c] == num) {
+                return 0;
+            }
+        }
+    }
+    
+    return 1; 
+}
+
+
+void copyBoard(int source[SIZE][SIZE], int destination[SIZE][SIZE]) {
+    int i, j;
+    for (i = 0; i < SIZE; i++) {
+        for (j = 0; j < SIZE; j++) {
+            destination[i][j] = source[i][j];
+        }
+    }
+}
+
+void shuffleArray(int arr[], int size) {
+    for (int i = size - 1; i > 0; i--) {
+        int j = rand() % (i + 1);
+        int temp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = temp;
+    }
+}
+
+
+void generateSolvedBoard(int board[SIZE][SIZE]) {
+    int i, j, index;
+    int templateBoard[SIZE][SIZE] = {
+        {1, 2, 3, 4, 5, 6, 7, 8, 9},
+        {4, 5, 6, 7, 8, 9, 1, 2, 3},
+        {7, 8, 9, 1, 2, 3, 4, 5, 6},
+        {2, 3, 4, 5, 6, 7, 8, 9, 1},
+        {5, 6, 7, 8, 9, 1, 2, 3, 4},
+        {8, 9, 1, 2, 3, 4, 5, 6, 7},
+        {3, 4, 5, 6, 7, 8, 9, 1, 2},
+        {6, 7, 8, 9, 1, 2, 3, 4, 5},
+        {9, 1, 2, 3, 4, 5, 6, 7, 8}
+    };
+    
+  
+    copyBoard(templateBoard, board);
+    
+
+    int numbers[SIZE] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+    shuffleArray(numbers, SIZE);
+    
+    
+    for (i = 0; i < SIZE; i++) {
+        for (j = 0; j < SIZE; j++) {
+            board[i][j] = numbers[templateBoard[i][j] - 1];
+        }
+    }
+    
+   
+    for (int block = 0; block < 3; block++) {
+        for (int iter = 0; iter < 3; iter++) {
+            int row1 = block * 3 + rand() % 3;
+            int row2 = block * 3 + rand() % 3;
+            
+            if (row1 != row2) {
+                for (j = 0; j < SIZE; j++) {
+                    int temp = board[row1][j];
+                    board[row1][j] = board[row2][j];
+                    board[row2][j] = temp;
+                }
+            }
+        }
+    }
+    
+ 
+    for (int block = 0; block < 3; block++) {
+        for (int iter = 0; iter < 3; iter++) {
+            int col1 = block * 3 + rand() % 3;
+            int col2 = block * 3 + rand() % 3;
+            
+            if (col1 != col2) {
+                for (i = 0; i < SIZE; i++) {
+                    int temp = board[i][col1];
+                    board[i][col1] = board[i][col2];
+                    board[i][col2] = temp;
+                }
+            }
+        }
+    }
+    
+    
+    for (int iter = 0; iter < 3; iter++) {
+        int blockRow1 = rand() % 3;
+        int blockRow2 = rand() % 3;
+        
+        if (blockRow1 != blockRow2) {
+            for (i = 0; i < 3; i++) {
+                for (j = 0; j < SIZE; j++) {
+                    int temp = board[blockRow1 * 3 + i][j];
+                    board[blockRow1 * 3 + i][j] = board[blockRow2 * 3 + i][j];
+                    board[blockRow2 * 3 + i][j] = temp;
+                }
+            }
+        }
+    }
+    
+  
+    for (int iter = 0; iter < 3; iter++) {
+        int blockCol1 = rand() % 3;
+        int blockCol2 = rand() % 3;
+        
+        if (blockCol1 != blockCol2) {
+            for (i = 0; i < SIZE; i++) {
+                for (j = 0; j < 3; j++) {
+                    int temp = board[i][blockCol1 * 3 + j];
+                    board[i][blockCol1 * 3 + j] = board[i][blockCol2 * 3 + j];
+                    board[i][blockCol2 * 3 + j] = temp;
+                }
+            }
+        }
+    }
+}
+
+
+void createPuzzle(int solvedBoard[SIZE][SIZE], int puzzleBoard[SIZE][SIZE]) {
+    int i, j;
+    int cellsToRemove = SIZE * SIZE - NUM_HINTS;
+    
+ 
+    copyBoard(solvedBoard, puzzleBoard);
+    
+
+    int removed = 0;
+    while (removed < cellsToRemove) {
+ 
+        i = rand() % SIZE;
+        j = rand() % SIZE;
+        
+   
+        if (puzzleBoard[i][j] != 0) {
+            puzzleBoard[i][j] = 0;
+            removed++;
+        }
+    }
+}
+
+
+void generateRandomBoards(int boards[NUM_BOARDS][SIZE][SIZE], int solutions[NUM_BOARDS][SIZE][SIZE]) {
+    int i;
+    int solvedBoard[SIZE][SIZE];
+    
+    for (i = 0; i < NUM_BOARDS; i++) {
+        generateSolvedBoard(solvedBoard);
+        copyBoard(solvedBoard, solutions[i]); 
+        createPuzzle(solvedBoard, boards[i]);  
+    }
+}
+
+
+int isBoardComplete(int board[SIZE][SIZE]) {
+    int i, j;
+    for (i = 0; i < SIZE; i++) {
+        for (j = 0; j < SIZE; j++) {
+            if (board[i][j] == 0) {
+                return 0;
+            }
+        }
+    }
+    
+
+    for (i = 0; i < SIZE; i++) {
+        int used[SIZE + 1] = {0};
+        for (j = 0; j < SIZE; j++) {
+            int num = board[i][j];
+            if (used[num]) {
+                return 0; 
+            }
+            used[num] = 1;
+        }
+    }
+    
+    
+    for (j = 0; j < SIZE; j++) {
+        int used[SIZE + 1] = {0};
+        for (i = 0; i < SIZE; i++) {
+            int num = board[i][j];
+            if (used[num]) {
+                return 0; 
+            }
+            used[num] = 1;
+        }
+    }
+    
+
+    for (int blockRow = 0; blockRow < 3; blockRow++) {
+        for (int blockCol = 0; blockCol < 3; blockCol++) {
+            int used[SIZE + 1] = {0};
+            for (i = 0; i < 3; i++) {
+                for (j = 0; j < 3; j++) {
+                    int num = board[blockRow * 3 + i][blockCol * 3 + j];
+                    if (used[num]) {
+                        return 0; 
+                    }
+                    used[num] = 1;
+                }
+            }
+        }
+    }
+    
+    return 1; 
+}
+
+
+int areEqual(int board1[SIZE][SIZE], int board2[SIZE][SIZE]) {
+    for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
+            if (board1[i][j] != board2[i][j]) {
+                return 0;
+            }
+        }
+    }
+    return 1;
+}
+
+
+void waitForEnter() {
+    printf("\nApasă Enter pentru a continua...");
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF) { }
+    getchar();
+}
+
+
+void showSolution(int solutions[NUM_BOARDS][SIZE][SIZE], int currentBoardIndex) {
+    printf("\nSoluția pentru Tabla %d:\n", currentBoardIndex + 1);
+    printBoard(solutions[currentBoardIndex]);
+    waitForEnter();
+}
+
+void showClueType1(int solutions[NUM_BOARDS][SIZE][SIZE]) {
+    int boardIndex, row, col;
+    
+    printf("\nAlege tabla pentru care dorești indiciul (1-%d): ", NUM_BOARDS);
+    scanf("%d", &boardIndex);
+    
+    if (boardIndex < 1 || boardIndex > NUM_BOARDS) {
+        printf("Număr de tablă invalid.");
+        return;
+    }
+    
+    printf("Introdu rândul (1-9): ");
+    scanf("%d", &row);
+    printf("Introdu coloana (1-9): ");
+    scanf("%d", &col);
+    
+    row--;  // Convertim la indexare de la 0
+    col--;
+    
+    if (row < 0 || row >= SIZE || col < 0 || col >= SIZE) {
+        printf("Poziție invalidă!");
+    } else {
+        printf("\nNumărul de la poziția (%d,%d) din soluția tablei %d este: %d\n", 
+               row + 1, col + 1, boardIndex, solutions[boardIndex - 1][row][col]);
+    }
+    waitForEnter();
+}
+
+void showClueType2(int solutions[NUM_BOARDS][SIZE][SIZE], int boards[NUM_BOARDS][SIZE][SIZE], int selectedBoard[SIZE][SIZE], int originalBoard[SIZE][SIZE]) {
+    int boardIndex, digit, count = 0;
+    
+    printf("\nAlege tabla pentru care dorești indiciul (1-%d): ", NUM_BOARDS);
+    scanf("%d", &boardIndex);
+    
+    if (boardIndex < 1 || boardIndex > NUM_BOARDS) {
+        printf("Număr de tablă invalid.");
+        return;
+    }
+    
+    boardIndex--; // Convertim la indexare de la 0
+    
+    printf("Introdu cifra pe care dorești să o completezi (1-9): ");
+    scanf("%d", &digit);
+    
+    if (digit < 1 || digit > 9) {
+        printf("Cifră invalidă!");
+        waitForEnter();
+        return;
+    }
+    
+    // Completăm toate aparițiile cifrei alese în tabla selectată
+    for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
+            if (solutions[boardIndex][i][j] == digit && selectedBoard[i][j] == 0) {
+                selectedBoard[i][j] = digit;
+                count++;
+            }
+        }
+    }
+    
+    printf("\nAu fost completate %d apariții ale cifrei %d în tabla %d.\n", count, digit, boardIndex + 1);
+    waitForEnter();
+}
+
+
+void playSudoku(int boards[NUM_BOARDS][SIZE][SIZE], int solutions[NUM_BOARDS][SIZE][SIZE]) {
+    int selectedBoard[SIZE][SIZE];
+    int originalBoard[SIZE][SIZE];
+    int choice, row, col, num;
+    int playing = 1;
+    char input;
+    int currentBoardIndex = 0;
+    
+    // Sistem de credite și achiziții - acum folosim contoare în loc de boolean
+    int credits = 0;
+    int clueType1Count = 0;
+    int clueType2Count = 0;
+    int solutionCount = 0;
+    
+
+    printf("Table disponibile:\n\n");
+    int i;
+    for (i = 0; i < NUM_BOARDS; i++) {
+        printf("Tabla %d:\n", i + 1);
+        printBoard(boards[i]);
+        printf("\n");
+    }
+    
+    
+    do {
+        printf("Alege o tablă (1-%d): ", NUM_BOARDS);
+        scanf("%d", &choice);
+    } while (choice < 1 || choice > NUM_BOARDS);
+    
+    currentBoardIndex = choice - 1;
+    
+
+    copyBoard(boards[currentBoardIndex], selectedBoard);
+    copyBoard(boards[currentBoardIndex], originalBoard);
+    
+
+    while (playing) {
+        printf("Tabla Sudoku #%d:\n", currentBoardIndex + 1);
+        printBoard(selectedBoard);
+        
+        printf("\nOpțiuni:\n");
+        printf("1. Fă o mutare\n");
+        printf("2. Verifică dacă tabla este corectă\n");
+        printf("3. Resetează tabla\n");
+        printf("4. Folosește obiectele achiziționate\n");
+        printf("5. Selectează o altă tablă\n");
+        printf("6. Deschide magazin\n");
+        printf("7. Ieșire\n");
+        printf("Credite: %d\n", credits);
+        printf("Obiecte: Indicii Tip 1: %d | Indicii Tip 2: %d | Soluții: %d\n", 
+               clueType1Count, clueType2Count, solutionCount);
+        printf("Alege opțiunea: ");
+        scanf("%d", &choice);
+        
+        if (choice == 1) {
+            printf("Introdu rândul (1-9): ");
+            scanf("%d", &row);
+            printf("Introdu coloana (1-9): ");
+            scanf("%d", &col);
+            
+            row--;
+            col--;
+            
+
+            if (row < 0 || row >= SIZE || col < 0 || col >= SIZE) {
+                printf("Rând sau coloană invalidă.");
+                waitForEnter();
+            } else if (originalBoard[row][col] != 0) {
+                printf("Nu poți modifica celulele predefinite!");
+                waitForEnter();
+            } else {
+                printf("Introdu numărul (1-9, 0 pentru a șterge): ");
+                scanf("%d", &num);
+                
+                if (num < 0 || num > 9) {
+                    printf("Număr invalid.");
+                    waitForEnter();
+                } else if (num != 0 && !isValidMove(selectedBoard, row, col, num)) {
+                    printf("Mutare invalidă! Aceasta ar încălca regulile Sudoku.\n");
+                    printf("Dorești să plasezi oricum? (y/n): ");
+                    
+
+                    int c;
+                    while ((c = getchar()) != '\n' && c != EOF) { }
+                    
+                    input = getchar();
+                    
+                    if (input == 'y' || input == 'Y') {
+                        selectedBoard[row][col] = num;
+                    }
+                    
+
+                    while ((c = getchar()) != '\n' && c != EOF) { }
+                } 
+                
+                else {
+                    selectedBoard[row][col] = num;
+                }
+            }
+        } 
+        
+        else if (choice == 2) {
+            if (isBoardComplete(selectedBoard)) {
+                if (areEqual(selectedBoard, solutions[currentBoardIndex])) {
+                    printf("\nFelicitări! Soluția ta este corectă!\n");
+                    printf("\nAi primit 10 credite!\n");
+                    credits += 10;
+                    printf("Credite totale: %d\n", credits);
+                } else {
+                    printf("\nSoluția este incorectă. Mai verifică o dată!\n");
+                }
+            } else {
+                printf("\nTabla nu este completă sau are erori.\n");
+            }
+            waitForEnter();
+        }
+        
+        else if (choice == 3) {
+            copyBoard(originalBoard, selectedBoard);
+            printf("\nTabla a fost resetată.");
+            waitForEnter();
+        } 
+        
+        else if (choice == 4) {
+            printf("\nFolosește obiectele achiziționate:\n");
+            int hasItems = 0;
+            
+            if (clueType1Count > 0) {
+                printf("1. Indicii Tip 1 - Află un număr specific din soluție (%d disponibile)\n", clueType1Count);
+                hasItems = 1;
+            }
+            
+            if (clueType2Count > 0) {
+                printf("2. Indicii Tip 2 - Completează toate aparițiile unei cifre (%d disponibile)\n", clueType2Count);
+                hasItems = 1;
+            }
+            
+            if (solutionCount > 0) {
+                printf("3. Soluția Sudoku (%d disponibile)\n", solutionCount);
+                hasItems = 1;
+            }
+            
+            if (!hasItems) {
+                printf("Nu ai achiziționat încă niciun obiect!\n");
+                waitForEnter();
+            } else {
+                printf("Alege obiectul pe care dorești să-l folosești (0 pentru anulare): ");
+                int itemChoice;
+                scanf("%d", &itemChoice);
+                
+                if (itemChoice == 0) {
+                    printf("Ai anulat folosirea obiectelor.\n");
+                } else {
+                    switch (itemChoice) {
+                        case 1:
+                            if (clueType1Count > 0) {
+                                printf("Folosești Indicii Tip 1.\n");
+                                showClueType1(solutions);
+                                clueType1Count--; // Decrementăm numărul de indicii disponibile
+                            } else {
+                                printf("Nu ai achiziționat acest obiect!\n");
+                                waitForEnter();
+                            }
+                            break;
+                        case 2:
+                            if (clueType2Count > 0) {
+                                printf("Folosești Indicii Tip 2.\n");
+                                showClueType2(solutions, boards, selectedBoard, originalBoard);
+                                clueType2Count--; // Decrementăm numărul de indicii disponibile
+                            } else {
+                                printf("Nu ai achiziționat acest obiect!\n");
+                                waitForEnter();
+                            }
+                            break;
+                        case 3:
+                            if (solutionCount > 0) {
+                                printf("Folosești Soluția Sudoku.\n");
+                                showSolution(solutions, currentBoardIndex);
+                                solutionCount--; // Decrementăm numărul de soluții disponibile
+                            } else {
+                                printf("Nu ai achiziționat acest obiect!\n");
+                                waitForEnter();
+                            }
+                            break;
+                        default:
+                            printf("Opțiune invalidă.\n");
+                            waitForEnter();
+                            break;
+                    }
+                }
+            }
+        }
+        
+        else if (choice == 5) {
+            printf("Table disponibile:\n\n");
+            for (i = 0; i < NUM_BOARDS; i++) {
+                printf("Tabla %d:\n", i + 1);
+                printBoard(boards[i]);
+                printf("\n");
+            }
+            
+
+            do {
+                printf("Alege o tablă (1-%d): ", NUM_BOARDS);
+                scanf("%d", &choice);
+            } while (choice < 1 || choice > NUM_BOARDS);
+            
+            currentBoardIndex = choice - 1;
+            copyBoard(boards[currentBoardIndex], selectedBoard);
+            copyBoard(boards[currentBoardIndex], originalBoard);
+        } 
+        
+        else if (choice == 6) {
+            // Deschide magazinul
+            printf("\nBine ai venit la Sudoku Shop!\n");
+            printf("\nCe ai dori să cumperi?\n");
+                    
+            printf("1. Indicii Tip 1 - Află un număr specific din soluție (3 credite)\n");
+            printf("2. Indicii Tip 2 - Completează toate aparițiile unei cifre (6 credite)\n");
+            printf("3. Soluția Sudoku (10 credite)\n");
+            printf("4. Nimic, continuă jocul\n");
+            
+            int shopChoice;
+            scanf("%d", &shopChoice);
+
+            switch (shopChoice) {
+                case 1:
+                    if (credits >= 3) {
+                        printf("Câte Indicii Tip 1 dorești să cumperi? (maxim %d): ", credits / 3);
+                        int quantity;
+                        scanf("%d", &quantity);
+                        
+                        if (quantity > 0 && quantity <= credits / 3) {
+                            printf("Ai cumpărat %d Indicii Tip 1 pentru %d credite.\n", quantity, quantity * 3);
+                            credits -= quantity * 3;
+                            clueType1Count += quantity;
+                            printf("Credite rămase: %d\n", credits);
+                        } else {
+                            printf("Cantitate invalidă sau insuficiente credite!\n");
+                        }
+                    } else {
+                        printf("Nu ai suficiente credite!\n");
+                    }
+                    break;
+                case 2:
+                    if (credits >= 6) {
+                        printf("Câte Indicii Tip 2 dorești să cumperi? (maxim %d): ", credits / 6);
+                        int quantity;
+                        scanf("%d", &quantity);
+                        
+                        if (quantity > 0 && quantity <= credits / 6) {
+                            printf("Ai cumpărat %d Indicii Tip 2 pentru %d credite.\n", quantity, quantity * 6);
+                            credits -= quantity * 6;
+                            clueType2Count += quantity;
+                            printf("Credite rămase: %d\n", credits);
+                        } else {
+                            printf("Cantitate invalidă sau insuficiente credite!\n");
+                        }
+                    } else {
+                        printf("Nu ai suficiente credite!\n");
+                    }
+                    break;
+                case 3:
+                    if (credits >= 10) {
+                        printf("Câte Soluții dorești să cumperi? (maxim %d): ", credits / 10);
+                        int quantity;
+                        scanf("%d", &quantity);
+                        
+                        if (quantity > 0 && quantity <= credits / 10) {
+                            printf("Ai cumpărat %d Soluții pentru %d credite.\n", quantity, quantity * 10);
+                            credits -= quantity * 10;
+                            solutionCount += quantity;
+                            printf("Credite rămase: %d\n", credits);
+                        } else {
+                            printf("Cantitate invalidă sau insuficiente credite!\n");
+                        }
+                    } else {
+                        printf("Nu ai suficiente credite!\n");
+                    }
+                    break;
+                case 4:
+                    printf("Ai ales să nu cumperi nimic.\n");
+                    break;
+                default:
+                    printf("Opțiune invalidă.\n");
+                    break;
+            }
+            waitForEnter();
+        }
+        
+        else if (choice == 7) {
+            playing = 0;
+        } 
+        
+        else {
+            printf("\nOpțiune invalidă.");
+            waitForEnter();
+        }
+    }
+}
+
+int main() {
+    int boards[NUM_BOARDS][SIZE][SIZE];
+    int solutions[NUM_BOARDS][SIZE][SIZE];
+
+    srand(time(NULL));
+    
+    printf("Se generează table aleatorii de Sudoku...\n");
+    generateRandomBoards(boards, solutions);
+
+    printf("Bine ați venit la Sudoku!\n");
+    playSudoku(boards, solutions);
+    
+    printf("Mulțumim pentru joc!\n");
+    return 0;
+}
